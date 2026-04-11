@@ -834,11 +834,15 @@ function renderNav() {
   const el = document.getElementById('nav-actions');
   if (currentUser && currentUserData) {
     const plan = currentUserData.plan;
+    const manageBtn = plan === 'pro'
+      ? `<button class="btn btn-ghost" onclick="handleManageSubscription()" style="font-size:0.8rem">Manage Subscription</button>`
+      : '';
     el.innerHTML = `
       <div class="user-pill">
         ${currentUser.email.split('@')[0]}
         <span class="plan-badge ${plan === 'pro' ? 'badge-pro' : 'badge-free'}">${plan}</span>
       </div>
+      ${manageBtn}
       <button class="btn btn-ghost" onclick="handleLogout()">Log out</button>
     `;
   } else {
@@ -1009,6 +1013,24 @@ async function handleAuth() {
 function showAuthErr(msg) {
   const el = document.getElementById('auth-error');
   el.textContent = msg; el.style.display = 'block';
+}
+
+async function handleManageSubscription() {
+  try {
+    const res = await fetch(`${API_BASE}/listingai/create-portal-session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: currentUser.email,
+        return_url: window.location.href
+      })
+    });
+    const data = await res.json();
+    if (data.url) { window.location.href = data.url; }
+    else throw new Error('No portal URL');
+  } catch(e) {
+    showToast('Could not open subscription portal: ' + e.message, 'error');
+  }
 }
 
 async function handleLogout() {
